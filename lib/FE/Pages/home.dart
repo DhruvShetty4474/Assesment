@@ -27,18 +27,7 @@ class _HomeState extends State<Home> {
             width: double.infinity,
             height: MediaQuery.of(context).size.height,
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
-            // List of data from the database
-            // child: ListView.builder(
-            //   itemCount: 100,
-            //   itemBuilder: (context, index) {
-            //     // Rendering each data item
-            //     return const Text("Hello", style: TextStyle(
-            //       fontSize: 30,
-            //       fontWeight: FontWeight.bold
-            //     ),);
-            //   },
-            // ),
-            child: WebsocketClient(),
+            child: const WebsocketClient(),
           ),
 
         ),

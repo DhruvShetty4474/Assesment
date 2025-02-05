@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
-import 'BE/Server/server.dart';
+import 'BE/Notification/notification.dart';
 import 'BE/Server/websocket.dart';
 import 'FE/Pages/home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //creating instance of WebsocketServer
   final test = await WebsocketServer();
+  //starting the server
   await test.start();
+
+  //initialize notifications...
+  await Notification_Service().initNotification();
+
   runApp(const MyApp());
 }
 
