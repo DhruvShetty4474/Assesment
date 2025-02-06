@@ -45,6 +45,7 @@ dependencies:
   flutter_background_service: ^5.1.0
   flutter_local_notifications: ^18.0.1
   permission_handler: ^11.3.1
+  just_audio: ^0.9.46
   audioplayers: ^6.1.1
 
 
@@ -74,7 +75,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/
+    - assets/notifi_alrm_sound.mp3
+#    - assets/sound.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

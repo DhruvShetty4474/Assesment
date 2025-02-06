@@ -15,8 +15,7 @@ void main() async {
   //initialize notifications...
   await Notification_Service().initNotification();
 
-  final alarmService = AlarmNotificationService();
-  await alarmService.initAlarmNotifications();
+  await AlarmService().initAlarmNotifications();
 
   runApp(const MyApp());
 }

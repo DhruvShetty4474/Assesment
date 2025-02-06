@@ -1,8 +1,8 @@
 import 'dart:io';
-
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:just_audio/just_audio.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 ///Local Notification not a UI pop up
 
@@ -64,121 +64,148 @@ class Notification_Service {
   }
 }
 
-class AlarmNotificationService {
+
+class AlarmService {
+  static final AlarmService _instance = AlarmService._internal();
+
+  factory AlarmService() {
+    return _instance;
+  }
+
+  AlarmService._internal();
+
   final alarmNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-  bool _alarmIsInitialized = false;
-
+  final AudioPlayer _audioPlayer = AudioPlayer(); // Use audioplayers AudioPlayer
+  bool _isInitialized = false;
   bool _alarmIsRunning = false;
+  bool _stopRequested = false;
 
+  bool get isInitialized => _isInitialized;
   bool get alarmIsRunning => _alarmIsRunning;
+  bool get stopRequested => _stopRequested;
 
-  bool get alarmIsInitialized => _alarmIsInitialized;
-
-  final AudioPlayer audioPlayer = AudioPlayer();
-
-  //INITIALIZE
+  // Initialize alarm notifications
   Future<void> initAlarmNotifications() async {
-    if (_alarmIsInitialized) return; //prevent multiple initialization
+    if (_isInitialized) return;
 
     if (Platform.isAndroid) {
-      // Request permission explicitly on Android 13+
-      if (await Permission.notification.request().isDenied) {
-        return; // Exit if permission is not granted
+      var status = await Permission.notification.request();
+      if (status.isDenied || status.isPermanentlyDenied) {
+        print("Notification permission denied!");
+        return;
       }
     }
-    //prepare android init setting
-    const AndroidInitializationSettings alarmAndroidInitSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    //init Settings
+    // Prepare Android initialization settings
+    const AndroidInitializationSettings initSettingsAndroid =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+
     const initSettings = InitializationSettings(
-      android: alarmAndroidInitSettings,
+      android: initSettingsAndroid,
     );
 
-    //initializing the plugin
-    await alarmNotificationsPlugin.initialize(
-        initSettings,
-        onDidReceiveNotificationResponse: ( NotificationResponse response) {
+    // Initializing the plugin
+    await alarmNotificationsPlugin.initialize(initSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
           print("Notification clicked action id: ${response.actionId}");
-          print("Notification clicked id : ${response.id}");
-          if (response.actionId == 'stop_alarm'){
-            print("Close Alarm button clicked"); // Log when button is pressed
+          print("Notification clicked id: ${response.id}");
+          if (response.actionId == 'stop_alarm') {
+            print("Close Alarm button clicked");
             stopAlarm(response.id ?? 0);
+          }
+        });
+    _isInitialized = true; // Set initialized flag
+  }
+
+  // Notification details setup
+  NotificationDetails notificationDetails() {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'alarm_notification_channel',
+        'Alarm Notification',
+        channelDescription: 'Notification test channel_description',
+        importance: Importance.max,
+        priority: Priority.high,
+       playSound: false,
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            'stop_alarm',
+            'Close Alarm',
+            showsUserInterface: true,
+            cancelNotification: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show notification
+  Future<void> showAlarmNotification({int? id, String? title, String? body}) async {
+    if (!_isInitialized) await initAlarmNotifications();
+    if (_alarmIsRunning) return; // Prevent multiple alarms
+
+    _alarmIsRunning = true;
+
+    try {
+      if (_audioPlayer.state == PlayerState.playing) {
+        await _audioPlayer.stop();  // Stop any currently playing sound
       }
+      // Load and play alarm sound in loop using audioplayers
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    await _audioPlayer.play(AssetSource('notifi_alrm_sound.mp3'));
+ // Set loop mode to loop forever
+    } catch (e) {
+      print("Error playing alarm sound: $e");
+    }
+
+    print("Attempting to show notification...");
+    // Generate a random id for the notification
+    int uniqueId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    await alarmNotificationsPlugin.show(
+      uniqueId, // Unique notification ID
+      title,
+      body,
+      notificationDetails(),
+      payload: 'stop_alarm',
+    ).then((value) {
+      print("Notification triggered successfully");
+    }).catchError((e) {
+      print("Error triggering notification: $e");
     });
 
-    _alarmIsInitialized = true; // Setting initialized flag
-  }
-  //SHOW NOTIFICATION
-  Future<void> showAlarmNotification({
-    int? id,
-    String? title,
-    String? body,
-  }) async {
-    _alarmIsRunning = false;
-    // Start playing the alarm sound
-    audioPlayer.setReleaseMode(ReleaseMode.loop);
-    await audioPlayer.play(AssetSource('sound.mp3'));
-
-    //show notification with " Stop Alarm " option..
-    const AndroidNotificationDetails alarmAndroidDetails =
-        AndroidNotificationDetails(
-      'alarm_channel',
-      'Alarm Notification',
-      channelDescription: 'Triggered when new data is added',
-      importance: Importance.max,
-      priority: Priority.high,
-      sound: RawResourceAndroidNotificationSound('sound'),
-      playSound: true,
-      // category: AndroidNotificationCategory.alarm,
-      fullScreenIntent: true,
-      actions: <AndroidNotificationAction> [
-        AndroidNotificationAction('stop_alarm', 'Close Alarm', showsUserInterface: true,
-          cancelNotification: false//cancel notification when clicked
-          ,),
-      ],
-    );
-
-    const NotificationDetails alarmNotificationDetails =
-        NotificationDetails(android: alarmAndroidDetails);
-    //Generate a random id
-    int uniqueId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
-    //Show notification
-    await alarmNotificationsPlugin.show(
-      uniqueId, title, body,
-      alarmNotificationDetails,
-      payload: 'stop_alarm', // Pass payload to identify the action
-    );
-    // Stop alarm after 1 minute
-    Future.delayed(const Duration(minutes: 1), () {
-      stopAlarm(uniqueId);
-      print('1 min over');
+    // Automatically stop the alarm after 1 minute if not manually stopped
+    Future.delayed(const Duration(minutes: 1), () async {
+      if (!_stopRequested) {
+        stopAlarm(uniqueId);
+        print('1 min over, alarm stopped automatically');
+      }
     });
   }
 
   // Stop alarm and cancel notification
   Future<void> stopAlarm(int notificationId) async {
-    if (_alarmIsRunning) return; // Skip if already stopped
-    _alarmIsRunning = true;
+    if (!_alarmIsRunning) return;
+
+    _alarmIsRunning = false;
+    _stopRequested = true;
 
     try {
       print("Stopping alarm for notification ID: $notificationId");
 
-      if (audioPlayer.state == PlayerState.playing) {
-        await audioPlayer.stop();
-        await audioPlayer.dispose();
-      }
+      // Stop the audio playback
+      await _audioPlayer.stop();
+      await _audioPlayer.dispose(); // Dispose audio player after use
 
-
+      // Cancel the notification
       await alarmNotificationsPlugin.cancel(notificationId);
       print("Alarm stopped successfully!");
-      _alarmIsRunning = false;
     } catch (e) {
       print('Error stopping alarm: $e');
     }
   }
 }
+
+
 
 
 

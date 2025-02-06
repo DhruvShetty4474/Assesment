@@ -98,12 +98,13 @@ class _WebsocketClientState extends State<WebsocketClient> {
 
         case 'insert':
           newDataList.add(decodedData['data']);
-          //Notification_Service().showNotification(title: "Data Inserted", body: "Data with ID ${decodedData['data']['name']} has been inserted.");
-          AlarmNotificationService().showAlarmNotification(
-            title: "Data Inserted",
-            body:  "Data with ID ${decodedData['data']['name']} has been inserted.",
+          // Show alarm notification
+          AlarmService().showAlarmNotification(
+              title: "Data Inserted",
+              body: "Data with ID ${decodedData['data']['name']} has been inserted."
           );
           break;
+
         default:
           print(" Invalid operation: ${decodedData['operation']}");
           return;
@@ -142,14 +143,6 @@ class _WebsocketClientState extends State<WebsocketClient> {
               );
             }
         );
-        // return ElevatedButton(
-        //   onPressed: () async {
-        //     print("Manual stop button clicked");
-        //     await AlarmNotificationService().stopAlarm(0);
-        //   },
-        //   child: Text("Stop Alarm"),
-        // );
-
       }
     );
   }

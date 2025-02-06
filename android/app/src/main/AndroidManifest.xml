@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
 
     <application
+
         android:label="filamentai"
         android:icon="@mipmap/ic_launcher" >
         <activity
