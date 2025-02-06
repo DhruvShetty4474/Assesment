@@ -4,6 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 // import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../BACKGROUND SERVICES/permission.dart';
+
 ///Local Notification not a UI pop up
 
 /// Currently only available for android
@@ -19,12 +21,8 @@ class Notification_Service {
   Future<void> initNotification() async {
     if (_isInitialized) return; //prevent multiple initialization
 
-    if (Platform.isAndroid) {
-      // Request permission explicitly on Android 13+
-      if (await Permission.notification.request().isDenied) {
-        return; // Exit if permission is not granted
-      }
-    }
+    //Ask for Notification permission
+    await requestNotificationPermission();
 
     //prepare android init setting
     const AndroidInitializationSettings initSettingsAndroid =
@@ -88,13 +86,7 @@ class AlarmService {
   Future<void> initAlarmNotifications() async {
     if (_isInitialized) return;
 
-    if (Platform.isAndroid) {
-      var status = await Permission.notification.request();
-      if (status.isDenied || status.isPermanentlyDenied) {
-        print("Notification permission denied!");
-        return;
-      }
-    }
+    await requestNotificationPermission();
 
     // Prepare Android initialization settings
     const AndroidInitializationSettings initSettingsAndroid =

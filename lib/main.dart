@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'BE/BACKGROUND SERVICES/permission.dart';
 import 'BE/Notification/notification.dart';
 import 'BE/Server/websocket.dart';
 import 'FE/Pages/home.dart';
@@ -15,7 +16,11 @@ void main() async {
   //initialize notifications...
   await Notification_Service().initNotification();
 
+  //initialize alarm notifications
   await AlarmService().initAlarmNotifications();
+
+  //request battery optimization
+  await requestBatteryOptimization();
 
   runApp(const MyApp());
 }

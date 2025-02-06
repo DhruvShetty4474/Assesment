@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
 import '../Notification/notification.dart';
 
 
@@ -41,7 +40,7 @@ class _WebsocketClientState extends State<WebsocketClient> {
     // Listen for incoming data
     channel.stream.listen(
             (message){
-          print(" Received data: $message"); // Debug incoming data
+          // print(" Received data: $message"); // Debug incoming data
           handleIncomingData(message);
         },
        onDone: () {
