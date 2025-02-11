@@ -43,10 +43,10 @@ class _WebsocketClientState extends State<WebsocketClient> {
           // print(" Received data: $message"); // Debug incoming data
           handleIncomingData(message);
         },
-       onDone: () {
-      print(" WebSocket closed, reconnecting...");
-      Future.delayed(const Duration(seconds: 3), connectWebSocket);
-    }, onError: (error) {
+        onDone: () {
+          print(" WebSocket closed, reconnecting...");
+          Future.delayed(const Duration(seconds: 3), connectWebSocket);
+        }, onError: (error) {
       print("️ WebSocket error: $error");
     });
   }
@@ -79,7 +79,7 @@ class _WebsocketClientState extends State<WebsocketClient> {
       // Process the incoming data based on the operation type and perform the corresponding action
       switch (decodedData['operation']) {
         case 'delete':
-          //Currently only showing the document id will show the name of the user that was deleted..
+        //Currently only showing the document id will show the name of the user that was deleted..
           Notification_Service().showNotification(title: "Data Deleted", body: "Data with ID ${decodedData['document_id']} has been deleted.");
           newDataList.removeWhere((item) => item['_id'] == decodedData['document_id']);
           break;
@@ -117,9 +117,9 @@ class _WebsocketClientState extends State<WebsocketClient> {
     } catch (e) {
       print(" Error processing data: $e");
     }
-    }
+  }
 
-    // Closes the WebSocket connection
+  // Closes the WebSocket connection
   @override
   void dispose() {
     channel.sink.close();
@@ -129,20 +129,20 @@ class _WebsocketClientState extends State<WebsocketClient> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
-      valueListenable: dataNotifier,
-      builder: (context, dataList, child) {
-        return ListView.builder(
-            itemCount: dataList.length,
-            itemBuilder: (context, index){
-              var item = dataList[index];
-              if (item['_id'] == null) return const SizedBox();
-              return ListTile(
-                title: Text(item['name'] ?? 'No Name'), // Adjust according to DB schema
-                subtitle: Text("ID: ${item['_id']}"),
-              );
-            }
-        );
-      }
+        valueListenable: dataNotifier,
+        builder: (context, dataList, child) {
+          return ListView.builder(
+              itemCount: dataList.length,
+              itemBuilder: (context, index){
+                var item = dataList[index];
+                if (item['_id'] == null) return const SizedBox();
+                return ListTile(
+                  title: Text(item['name'] ?? 'No Name'), // Adjust according to DB schema
+                  subtitle: Text("ID: ${item['_id']}"),
+                );
+              }
+          );
+        }
     );
   }
 }

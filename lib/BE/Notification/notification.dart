@@ -26,7 +26,7 @@ class Notification_Service {
 
     //prepare android init setting
     const AndroidInitializationSettings initSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     //init Settings
     const initSettings = InitializationSettings(
@@ -118,7 +118,7 @@ class AlarmService {
         channelDescription: 'Notification test channel_description',
         importance: Importance.max,
         priority: Priority.high,
-       playSound: false,
+        playSound: false,
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
             'stop_alarm',
@@ -137,15 +137,16 @@ class AlarmService {
     if (_alarmIsRunning) return; // Prevent multiple alarms
 
     _alarmIsRunning = true;
+    _stopRequested = false; //reset the flag
 
     try {
       if (_audioPlayer.state == PlayerState.playing) {
         await _audioPlayer.stop();  // Stop any currently playing sound
       }
       // Load and play alarm sound in loop using audioplayers
-    _audioPlayer.setReleaseMode(ReleaseMode.loop);
-    await _audioPlayer.play(AssetSource('notifi_alrm_sound.mp3'));
- // Set loop mode to loop forever
+      _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.play(AssetSource('notifi_alrm_sound.mp3'));
+      // Set loop mode to loop forever
     } catch (e) {
       print("Error playing alarm sound: $e");
     }
@@ -186,7 +187,7 @@ class AlarmService {
 
       // Stop the audio playback
       await _audioPlayer.stop();
-      await _audioPlayer.dispose(); // Dispose audio player after use
+      // await _audioPlayer.dispose(); // Dispose audio player after use
 
       // Cancel the notification
       await alarmNotificationsPlugin.cancel(notificationId);
@@ -196,7 +197,6 @@ class AlarmService {
     }
   }
 }
-
 
 
 
