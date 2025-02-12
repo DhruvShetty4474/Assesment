@@ -1,11 +1,7 @@
 //
-// // import 'package:flutter_foreground_task/flutter_foreground_task.dart';import 'dart:async';
-//
-//
 // import 'dart:async';
-//
-// import 'package:filamentai/BE/Client/websocket_client.dart';
 // import 'package:flutter_background_service/flutter_background_service.dart';
+// import '../Client/websocket_client2.dart';
 // import '../Server/websocket.dart';
 //
 // class ForegroundService {
@@ -44,7 +40,7 @@
 //   }
 //
 //   void setBackground() async {
-//      service.invoke('setAsBackground');
+//       service.invoke('setAsBackground');
 //   }
 //
 //   void stopService() async {
@@ -76,7 +72,7 @@
 //     if (!_isClientConnected) {
 //       print('Checking WebSocket client connection...');
 //       await Future.delayed(Duration(seconds: 2)); // Small delay to prevent duplicates
-//       _client.connectWebSocket();
+//       await _client.connectWebSocket();
 //       _isClientConnected = true;
 //       print('WebSocket client connected.');
 //     }

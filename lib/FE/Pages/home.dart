@@ -1,8 +1,8 @@
 
 
 import 'package:flutter/material.dart';
-
 import '../../BE/Client/websocket_client.dart';
+import '../../BE/Client/websocket_client2.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -12,6 +12,11 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  @override
+  void initState() {
+
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +32,7 @@ class _HomeState extends State<Home> {
             width: double.infinity,
             height: MediaQuery.of(context).size.height,
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
-            child: const WebsocketClient(),
+            child: const WebsocketClientUI(),
           ),
 
         ),

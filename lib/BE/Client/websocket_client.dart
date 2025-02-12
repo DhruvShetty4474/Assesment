@@ -23,19 +23,19 @@ class _WebsocketClientState extends State<WebsocketClient> {
   void initState() {
     super.initState();
     dataNotifier = ValueNotifier([]);
-    backgroundService();
+    // backgroundService();
     connectWebSocket();
   }
 
-  // //Make the connection work in the background.
-  void backgroundService() {
-    FlutterBackgroundService().on('startWebSocket').listen((event) {
-      connectWebSocket();
-    });
-  }
+  // // //Make the connection work in the background.
+  // void backgroundService() {
+  //   FlutterBackgroundService().on('startWebSocket').listen((event) {
+  //     connectWebSocket();
+  //   });
+  // }
 // connects to the WebSocket server
-  void connectWebSocket() {
-    channel = IOWebSocketChannel.connect("ws://localhost:8080");
+  void connectWebSocket({int retryDelay = 3}) {
+    channel = IOWebSocketChannel.connect("ws://192.168.29.220:8080");
 
     // Listen for incoming data
     channel.stream.listen(
@@ -45,9 +45,14 @@ class _WebsocketClientState extends State<WebsocketClient> {
         },
         onDone: () {
           print(" WebSocket closed, reconnecting...");
-          Future.delayed(const Duration(seconds: 3), connectWebSocket);
+          Future.delayed(Duration(seconds: retryDelay), () {
+            connectWebSocket(retryDelay: retryDelay * 2);
+          });
         }, onError: (error) {
       print("️ WebSocket error: $error");
+      Future.delayed(Duration(seconds: retryDelay), () {
+        connectWebSocket(retryDelay: retryDelay * 2);
+      });
     });
   }
 

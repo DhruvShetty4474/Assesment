@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'BE/BACKGROUND SERVICES/background_service.dart';
 import 'BE/BACKGROUND SERVICES/foreground.dart';
 import 'BE/BACKGROUND SERVICES/permission.dart';
+import 'BE/Client/websocket_client2.dart';
 import 'BE/Notification/notification.dart';
 import 'BE/Server/websocket.dart';
 import 'FE/Pages/home.dart';
 
+@pragma('vm:entry-point')
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  //creating instance of WebsocketServer
-  WebsocketServer _server = WebsocketServer();
-  //starting the server
-  await _server.start();
 
   //initialize notifications...
   await Notification_Service().initNotification();
@@ -23,8 +21,11 @@ void main() async {
   //request battery optimization
   await requestBatteryOptimization();
 
-  // //initialize foreground service
-  // await  ForegroundService().initializeService();
+  //request notification permission
+  await requestNotificationPermission();
+
+  BackgroundService backgroundService = BackgroundService();
+  await backgroundService.initializeService();
 
   runApp(const MyApp());
 }

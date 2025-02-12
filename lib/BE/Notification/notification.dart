@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// import 'package:just_audio/just_audio.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+
+import '../BACKGROUND SERVICES/background_service.dart';
 import '../BACKGROUND SERVICES/permission.dart';
 
 ///Local Notification not a UI pop up
@@ -73,7 +73,7 @@ class AlarmService {
   AlarmService._internal();
 
   final alarmNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  final AudioPlayer _audioPlayer = AudioPlayer(); // Use audioplayers AudioPlayer
+  final AudioPlayer audioPlayer = AudioPlayer(); // Use audioplayers AudioPlayer
   bool _isInitialized = false;
   bool _alarmIsRunning = false;
   bool _stopRequested = false;
@@ -82,11 +82,23 @@ class AlarmService {
   bool get alarmIsRunning => _alarmIsRunning;
   bool get stopRequested => _stopRequested;
 
+  // **Load alarm state from SharedPreferences**
+  Future<void> loadAlarmState() async {
+    final prefs = await SharedPreferences.getInstance();
+    _alarmIsRunning = prefs.getBool('alarmIsRunning') ?? false;
+  }
+
+  // **Save alarm state to SharedPreferences**
+  Future<void> _saveAlarmState(bool state) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('alarmIsRunning', state);
+  }
+
   // Initialize alarm notifications
   Future<void> initAlarmNotifications() async {
     if (_isInitialized) return;
+    await loadAlarmState(); // Load the previous alarm state
 
-    await requestNotificationPermission();
 
     // Prepare Android initialization settings
     const AndroidInitializationSettings initSettingsAndroid =
@@ -98,12 +110,15 @@ class AlarmService {
 
     // Initializing the plugin
     await alarmNotificationsPlugin.initialize(initSettings,
+        onDidReceiveBackgroundNotificationResponse: notificationBackground,
         onDidReceiveNotificationResponse: (NotificationResponse response) {
           print("Notification clicked action id: ${response.actionId}");
           print("Notification clicked id: ${response.id}");
-          if (response.actionId == 'stop_alarm') {
+          if (response.actionId == 'stop_alarm' && !_stopRequested) {
+
             print("Close Alarm button clicked");
             stopAlarm(response.id ?? 0);
+            // _stopRequested = false;
           }
         });
     _isInitialized = true; // Set initialized flag
@@ -119,16 +134,31 @@ class AlarmService {
         importance: Importance.max,
         priority: Priority.high,
         playSound: false,
+        ongoing: true, // Prevents the notification from being swiped away
+        autoCancel: false, // Keeps notification visible until action is taken
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
             'stop_alarm',
             'Close Alarm',
             showsUserInterface: true,
             cancelNotification: true,
+            allowGeneratedReplies: true,
           ),
         ],
+        fullScreenIntent: true,
+        category: AndroidNotificationCategory.alarm,
       ),
     );
+  }
+
+  // Add this method to handle background notifications
+  @pragma('vm:entry-point')
+  static void notificationBackground(NotificationResponse response) async {
+    if (response.actionId == 'stop_alarm') {
+      final instance = AlarmService();
+      await instance.initAlarmNotifications(); // Reinitialize if needed
+      await instance.stopAlarm(response.id ?? 0);
+    }
   }
 
   // Show notification
@@ -138,14 +168,15 @@ class AlarmService {
 
     _alarmIsRunning = true;
     _stopRequested = false; //reset the flag
+    await _saveAlarmState(true); // Save state
 
     try {
-      if (_audioPlayer.state == PlayerState.playing) {
-        await _audioPlayer.stop();  // Stop any currently playing sound
+      if (audioPlayer.state == PlayerState.playing) {
+        await audioPlayer.stop();  // Stop any currently playing sound
       }
       // Load and play alarm sound in loop using audioplayers
-      _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.play(AssetSource('notifi_alrm_sound.mp3'));
+      audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await audioPlayer.play(AssetSource('notifi_alrm_sound.mp3'));
       // Set loop mode to loop forever
     } catch (e) {
       print("Error playing alarm sound: $e");
@@ -178,15 +209,14 @@ class AlarmService {
   // Stop alarm and cancel notification
   Future<void> stopAlarm(int notificationId) async {
     if (!_alarmIsRunning) return;
-
-    _alarmIsRunning = false;
-    _stopRequested = true;
-
     try {
       print("Stopping alarm for notification ID: $notificationId");
-
-      // Stop the audio playback
-      await _audioPlayer.stop();
+      _alarmIsRunning = false;
+      _stopRequested = true;
+      await _saveAlarmState(false); // Save stat
+      if (audioPlayer.state == PlayerState.playing) {
+        await audioPlayer.stop();
+      }
       // await _audioPlayer.dispose(); // Dispose audio player after use
 
       // Cancel the notification
@@ -194,12 +224,92 @@ class AlarmService {
       print("Alarm stopped successfully!");
     } catch (e) {
       print('Error stopping alarm: $e');
+      _stopRequested = false;
+      _alarmIsRunning = true;
+      await _saveAlarmState(true);
     }
   }
 }
 
 
+class Alarm_Notification_Service2 {
+  final FlutterLocalNotificationsPlugin notificationPlugin =
+  FlutterLocalNotificationsPlugin();
+  final AudioPlayer _audioPlayer = AudioPlayer(); // 🔥 Audio player instance
 
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
+  // INITIALIZE
+  Future<void> initNotification() async {
+    if (_isInitialized) return; // Prevent multiple initializations
 
+    // Prepare Android initialization settings
+    const AndroidInitializationSettings initSettingsAndroid =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    // Initialize settings
+    const InitializationSettings initSettings = InitializationSettings(
+      android: initSettingsAndroid,
+    );
+
+    // Initialize the plugin and handle actions
+    await notificationPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (response.actionId == 'stop_alarm') {
+          stopAlarm(); // 🔥 Stop the alarm sound when button clicked
+        }
+      },
+    );
+
+    _isInitialized = true; // Mark initialized
+  }
+
+  // NOTIFICATION DETAIL SETUP
+  NotificationDetails notificationDetails() {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'alarm_service_id',
+        'alarm_service_channel',
+        channelDescription: 'Alarm notification channel',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('alrmsound'), // 🔥 Custom alarm sound
+        ongoing: true, // Prevents the notification from being swiped away
+        autoCancel: false, // Keeps notification visible until action is taken
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            'stop_alarm', // 🔥 Action ID
+            'Close Alarm', // 🔥 Button label
+            showsUserInterface: true,
+            cancelNotification: true, // 🔥 Dismisses the notification
+            allowGeneratedReplies: true,
+          ),
+        ],
+        fullScreenIntent: true,
+        category: AndroidNotificationCategory.alarm,
+      ),
+    );
+  }
+
+  // SHOW NOTIFICATION
+  Future<void> showNotification({int? id, String? title, String? body}) async {
+    int uniqueId = id ?? DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    return notificationPlugin.show(
+      uniqueId, // Unique notification ID
+      title,
+      body,
+      notificationDetails(),
+    );
+  }
+
+  // 🔥 STOP ALARM SOUND
+  void stopAlarm() async {
+    print("❌ Stopping Alarm Sound...");
+    await _audioPlayer.stop(); // 🔥 Stop audio playback
+    notificationPlugin.cancelAll(); // 🔥 Remove the notification
+  }
+}
 
