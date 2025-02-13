@@ -1,9 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-
-import '../BACKGROUND SERVICES/background_service.dart';
 import '../BACKGROUND SERVICES/permission.dart';
 
 ///Local Notification not a UI pop up
@@ -22,7 +19,7 @@ class Notification_Service {
     if (_isInitialized) return; //prevent multiple initialization
 
     //Ask for Notification permission
-    await requestNotificationPermission();
+    // await requestNotificationPermission();
 
     //prepare android init setting
     const AndroidInitializationSettings initSettingsAndroid =
@@ -62,7 +59,7 @@ class Notification_Service {
   }
 }
 
-
+//CURRENTLY NOT IN USE....
 class AlarmService {
   static final AlarmService _instance = AlarmService._internal();
 
@@ -235,7 +232,7 @@ class AlarmService {
 class Alarm_Notification_Service2 {
   final FlutterLocalNotificationsPlugin notificationPlugin =
   FlutterLocalNotificationsPlugin();
-  final AudioPlayer _audioPlayer = AudioPlayer(); // 🔥 Audio player instance
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -258,7 +255,7 @@ class Alarm_Notification_Service2 {
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (response.actionId == 'stop_alarm') {
-          stopAlarm(); // 🔥 Stop the alarm sound when button clicked
+          stopAlarm();
         }
       },
     );
@@ -276,15 +273,15 @@ class Alarm_Notification_Service2 {
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('alrmsound'), // 🔥 Custom alarm sound
+        sound: RawResourceAndroidNotificationSound('alrmsound'),
         ongoing: true, // Prevents the notification from being swiped away
         autoCancel: false, // Keeps notification visible until action is taken
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
-            'stop_alarm', // 🔥 Action ID
-            'Close Alarm', // 🔥 Button label
+            'stop_alarm',
+            'Close Alarm',
             showsUserInterface: true,
-            cancelNotification: true, // 🔥 Dismisses the notification
+            cancelNotification: true,
             allowGeneratedReplies: true,
           ),
         ],
@@ -305,11 +302,11 @@ class Alarm_Notification_Service2 {
     );
   }
 
-  // 🔥 STOP ALARM SOUND
+
   void stopAlarm() async {
-    print("❌ Stopping Alarm Sound...");
-    await _audioPlayer.stop(); // 🔥 Stop audio playback
-    notificationPlugin.cancelAll(); // 🔥 Remove the notification
+    print("Stopping Alarm Sound...");
+    await _audioPlayer.stop();
+    notificationPlugin.cancelAll();
   }
 }
 

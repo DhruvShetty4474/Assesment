@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:filamentai/BE/Client/websocket_client2.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../main.dart';
 import '../Notification/notification.dart';
 
 class BackgroundService {
@@ -21,7 +20,7 @@ class BackgroundService {
      // Load the alarm state when service starts
 
     if (await service.isRunning()) {
-      print(" Background service is already running.");
+      print("Background service is already running.");
       return;
     }
     _alarmService = AlarmService();
@@ -62,103 +61,48 @@ class BackgroundService {
     service.invoke('stopService');
   }
 }
-
-// Future<void> startClient() async {
-//   if (isClientConnected.value) {
-//     print("WebSocket client is already connected");
-//     return; // Prevent duplicate connections
-//   }
-//
-//   client.value = WClient(); // Assign singleton instance
-//   await client.value!.connectWebSocket();
-//   // isClientConnected.value = true;
-//   print("Background WebSocket client started");
-// }
-
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
 
+  print("disconnecting the client from background service");
+  client.value.disconnectWebSocket();
 
-
-  // WClient _client; // Create a single WebSocket client instance
-  // bool _isClientConnected = false; // Track client connection state
-
-  // client.value ??= WClient();
-
-  //Function to start the websocket client
-
-// Add a small delay to avoid race condition with UI initialization
   await Future.delayed(const Duration(milliseconds: 500));
-  // // Then check if we need to connect
-  // if (!isClientConnected.value && client.value == null) {
-  //   print('Background service initializing connection');
-  //   client.value = WClient();
-  //   await client.value!.connectWebSocket();
-  //   isClientConnected.value = true;
-  // }
 
     if (service is AndroidServiceInstance) {
 
-    // // Periodic check to ensure connection
-    // Timer.periodic(const Duration(minutes: 1), (timer) async {
-    //   if (!isClientConnected.value) {
-    //     print('Periodic connection check - attempting to reconnect');
-    //     await client.value?.connectWebSocket();
-    //   }
-    // });
-
       service.setAsForegroundService();
-
-      ///
-
       // Set a persistent notification
       service.setForegroundNotificationInfo(
         title: "App is running in background",
         content: "Maintaining connection",
       );
 
-    service.on('setAsForeground').listen((event) {
+      service.on('setAsForeground').listen((event) {
+        print('Foreground mode activated');
+        // Don't create new connection if one exists
+        if (!isClientConnected.value && client.value.channel == null) {
+          print("Initiating foreground connection");
+          client.value.connectWebSocket();
+          isClientConnected.value = true;
+        }
+      });
 
-      print('foreground started ');
-
-      if (isClientConnected.value == false) {
-        client.value.disconnectWebSocket();
-         Future.delayed(const Duration(milliseconds: 500));
-        client.value.connectWebSocket();
-      }
-    });
-
-
-    service.on('setAsBackground').listen((event) {
-
-      print('background started ');
-
-      if (isClientConnected.value ==  false) {
-        client.value.disconnectWebSocket();
-        Future.delayed(const Duration(milliseconds: 500));
-        client.value.connectWebSocket();
-      }
-    });
+      service.on('setAsBackground').listen((event) {
+        print('Background mode activated');
+        // Don't create new connection if one exists
+        if (!isClientConnected.value && client.value.channel == null) {
+          print("Initiating background connection");
+          client.value.connectWebSocket();
+          isClientConnected.value = true;
+        }
+      });
 
 
     service.on('stopService').listen((event) {
-      isClientConnected.value = false;
+      print("Service stop requested");
       client.value.disconnectWebSocket();
       service.stopSelf();
     });
   }
-
-
-  /// secnd
-  // try {
-  //   // client.value ??= WClient();
-  // if (isClientConnected.value == false || client.value == null) {
-  // print('Background service initializing connection');
-  // await client.value?.connectWebSocket();
-  // isClientConnected.value = true;
-  // }
-  // } catch (e) {
-  // print('Initial connection error: $e');
-  // }
-
 }
