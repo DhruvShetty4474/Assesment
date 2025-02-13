@@ -273,7 +273,7 @@ class Alarm_Notification_Service2 {
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('alrmsound'),
+        sound: const  RawResourceAndroidNotificationSound('notifi_alrm_sound'),
         ongoing: true, // Prevents the notification from being swiped away
         autoCancel: false, // Keeps notification visible until action is taken
         actions: <AndroidNotificationAction>[

@@ -10,6 +10,10 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    aaptOptions {
+        noCompress "mp3"  // Prevents compression of MP3 files
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -29,6 +33,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
+        resConfigs "en"
     }
 
     buildTypes {
@@ -38,6 +43,8 @@ android {
             signingConfig = signingConfigs.debug
             minifyEnabled true // Enables code shrinking & obfuscation
             shrinkResources true  // Removes unused resources
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
         }
     }
 }
